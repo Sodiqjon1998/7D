@@ -762,35 +762,58 @@
 
         // Excel export
         function exportToExcel() {
+            // Agar o'quvchilar bo'lmasa
+            if (students.length === 0) {
+                alert('Eksport qilish uchun kamida bitta o\'quvchi qo\'shing!');
+                return;
+            }
+
+            // CSV header
             let csv = 'T/r,O\'quvchilar,';
             csv += subjects.map(s => s.name).join(',');
-            csv += ',Umumiy,O\'rin\n';
+            csv += ',Bali,O\'rin\n';
 
+            // O'quvchilarni reytingga ko'ra saralash
             const rankings = getRankings();
             const sortedStudents = [...students].sort((a, b) => rankings[a.id] - rankings[b.id]);
 
+            // Har bir o'quvchi uchun qator yaratish
             sortedStudents.forEach((student, index) => {
                 const stats = calculateStats(student.id);
                 let row = `${index + 1},"${student.name}",`;
 
+                // Har bir fan uchun baholarni qo'shish
                 subjects.forEach(subject => {
-                    const grade = grades[`${student.id}-${subject.id}`] || '';
+                    const grade = grades[`${student.id}-${subject.id}`] || '-';
                     row += `"${grade}",`;
                 });
 
-                // row += `${stats.total},${stats.average},${rankings[student.id]}`;
-                // csv += row + '\n';
+                // Umumiy ball va o'rinni qo'shish
+                row += `${stats.total},${rankings[student.id]}`;
+                csv += row + '\n';
             });
 
+            // UTF-8 BOM qo'shish (Excel uchun kerak)
             const BOM = '\uFEFF';
             const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8;' });
+
+            // Faylni yuklab olish
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
             link.setAttribute('href', url);
-            link.setAttribute('download', '7-D baholar_' + new Date().toLocaleDateString() + '.csv');
+
+            // Fayl nomi (sana bilan)
+            const date = new Date().toLocaleDateString('uz-UZ').replace(/\//g, '-');
+            link.setAttribute('download', `7D_baholar_${date}.csv`);
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+
+            // Memory tozalash
+            URL.revokeObjectURL(url);
+
+            alert('Excel fayli muvaffaqiyatli yuklandi!');
         }
 
         // Enter tugmasi bilan qo'shish
